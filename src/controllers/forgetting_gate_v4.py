@@ -67,17 +67,13 @@ class CleanForgettingController(nn.Module):
         capacity = self.check_capacity(memory_bank, access_times)
         threshold = self.compute_threshold(capacity)
 
-        combined = torch.cat([new_content, query], dim=-1)
-        relevance = self.store_relevance(combined).squeeze(-1)
-
         new_norm = F.normalize(new_content, dim=-1)
         mem_norm = F.normalize(memory_bank, dim=-1)
         similarities = torch.matmul(new_norm, mem_norm.t())
         max_sim = similarities.max(dim=-1).values
         novelty = 1.0 - max_sim
 
-        relevance_threshold = 0.42
-        should_store = (relevance > relevance_threshold) & (novelty > threshold)
+        should_store = novelty > threshold
 
         victim = None
         if capacity > self.capacity_limit:
@@ -124,7 +120,7 @@ class CleanForgettingController(nn.Module):
 
         return {
             "stored": written,
-            "store_score": float(relevance.mean().item()),
+            "store_score": float(novelty.mean().item()),
             "novelty": float(novelty.mean().item()),
             "dynamic_threshold": float(threshold),
             "threshold": float(threshold),

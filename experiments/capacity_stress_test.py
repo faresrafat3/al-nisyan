@@ -11,7 +11,7 @@ from src.models.memory_augmented_model_v2 import CultivatedMemoryModel
 import json
 
 def stress_test():
-    """Run 50 diverse interactions to push capacity to 30%+"""
+    """Run 200 interactions to push capacity to 30%+"""
     model = CultivatedMemoryModel(
         base_model_key="Qwen/Qwen3.5-4B",
         memory_slots=256,  # Smaller = faster to fill
@@ -19,22 +19,20 @@ def stress_test():
         controller_mode="clean",
     )
     
-    # 50 diverse interactions to push capacity to 30%+
-    stress_prompts = [
-        # Math (10)
+    # 160 diverse interactions + 40 repetitive interactions
+    base_prompts = [
+        # Math
         "What is 15 + 27?", "Calculate 8 * 9.", "What is 100 / 4?",
         "Solve x^2 - 5x + 6 = 0", "What is the derivative of x^3?",
         "Calculate 7!", "What is log(100)?", "Solve 2x + 3 = 11",
         "What is the area of circle radius 5?", "Calculate 3^5 + 2^4",
-        
-        # Science (10)
+        # Science
         "What is photosynthesis?", "Explain Newton's third law.",
         "What is DNA?", "How does a battery work?",
         "What is entropy?", "Explain quantum superposition simply.",
         "What are black holes?", "How do vaccines work?",
         "What is climate change?", "Explain nuclear fission.",
-        
-        # Code (10)
+        # Code
         "Write a Python function to reverse a string.",
         "How do you sort a list in JavaScript?",
         "Explain recursion with an example.",
@@ -42,24 +40,34 @@ def stress_test():
         "Explain Docker containers.", "What is REST API?",
         "How does blockchain work?", "Explain machine learning simply.",
         "What is Big O notation?",
-        
-        # Facts (10)
+        # Facts
         "Capital of Japan?", "Who painted the Mona Lisa?",
         "What is the tallest mountain?", "When did WW2 end?",
         "What is the speed of light?", "Who invented the telephone?",
         "What is the largest ocean?", "What language is spoken in Brazil?",
         "What is the currency of UK?", "Who wrote 1984?",
-        
-        # Repetitive (10) - should be rejected when capacity high
+    ]
+
+    diverse_prompts = []
+    while len(diverse_prompts) < 160:
+        diverse_prompts.extend(base_prompts)
+    diverse_prompts = diverse_prompts[:160]
+
+    repetitive_prompts = [
         "What is 2 + 2?", "What is 3 + 3?", "What is 4 + 4?",
         "What is 5 + 5?", "What is 6 + 6?", "What is 7 + 7?",
         "What is 8 + 8?", "What is 9 + 9?", "What is 10 + 10?",
         "What is 1 + 1?",
-    ]
+    ] * 4
+
+    stress_prompts = diverse_prompts + repetitive_prompts
     
     results = []
+    total = len(stress_prompts)
+    repetitive_start = len(diverse_prompts)
+
     for i, prompt in enumerate(stress_prompts):
-        print(f"\n[{i+1}/50] {prompt[:50]}...")
+        print(f"\n[{i+1}/{total}] {prompt[:50]}...")
         
         result = model.generate_with_cultivated_memory(
             prompt, 
@@ -92,11 +100,10 @@ def stress_test():
     print(f"{'='*60}")
     
     # Analysis: count rejections in repetitive phase
-    repetitive_start = 40
     repetitive_results = results[repetitive_start:]
     rejected_count = sum(1 for r in repetitive_results if not r['stored'])
     
-    print(f"\nRepetitive Phase (indices 40-49):")
+    print(f"\nRepetitive Phase (indices {repetitive_start}-{total - 1}):")
     print(f"  Total: {len(repetitive_results)}")
     print(f"  Stored: {len(repetitive_results) - rejected_count}")
     print(f"  Rejected: {rejected_count}")
