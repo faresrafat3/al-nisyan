@@ -138,7 +138,7 @@ class CultivatedMemoryModel(nn.Module):
 
     def encode_to_memory_space(self, text: str) -> torch.Tensor:
         """Encode text through base model then project to memory space."""
-        inputs = self.tokenizer(text, return_tensors="pt").to(self.loader.device)
+        inputs = self.tokenizer(text=text, return_tensors="pt").to(self.loader.device)
 
         with torch.no_grad():
             outputs = self.model(
@@ -217,7 +217,7 @@ class CultivatedMemoryModel(nn.Module):
         if self.memory_active:
             memory_context, attn = self.retrieve(query)
 
-        inputs = self.tokenizer(prompt, return_tensors="pt").to(device)
+        inputs = self.tokenizer(text=prompt, return_tensors="pt").to(device)
 
         with torch.no_grad():
             outputs = self.model.generate(
