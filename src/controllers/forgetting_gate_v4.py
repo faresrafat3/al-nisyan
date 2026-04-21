@@ -43,21 +43,21 @@ class CleanForgettingController(nn.Module):
             nn.Sigmoid(),
         )
 
-        self.decay_rate = nn.Parameter(torch.tensor(0.03))
+        self.decay_rate = nn.Parameter(torch.tensor(0.008))
         self.register_buffer("memory_change_ema", torch.zeros(1))
 
     def check_capacity(self, memory_bank: torch.Tensor) -> float:
         mem_norms = torch.norm(memory_bank, dim=-1)
-        meaningful = (mem_norms > 0.5).sum().item()
+        meaningful = (mem_norms > 0.2).sum().item()
         return float(meaningful / self.num_slots)
 
     def compute_threshold(self, capacity: float) -> float:
         if capacity < 0.30:
-            return 0.03
+            return 0.06
         elif capacity < 0.60:
-            return 0.03 + (capacity - 0.30) * 0.9
+            return 0.06 + (capacity - 0.30) * 0.8
         else:
-            return 0.30 + (capacity - 0.60) * 1.333
+            return 0.30 + (capacity - 0.60) * 1.0
 
     def forward(self, new_content, query, memory_bank, access_times, current_step):
         capacity = self.check_capacity(memory_bank)
@@ -72,7 +72,8 @@ class CleanForgettingController(nn.Module):
         max_sim = similarities.max(dim=-1).values
         novelty = 1.0 - max_sim
 
-        should_store = (relevance > 0.35) & (novelty > threshold)
+        relevance_threshold = 0.42
+        should_store = (relevance > relevance_threshold) & (novelty > threshold)
 
         victim = None
         if capacity > self.capacity_limit:
