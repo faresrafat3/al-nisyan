@@ -46,9 +46,13 @@ class CleanForgettingController(nn.Module):
         self.decay_rate = nn.Parameter(torch.tensor(0.008))
         self.register_buffer("memory_change_ema", torch.zeros(1))
 
-    def check_capacity(self, memory_bank: torch.Tensor) -> float:
+    def check_capacity(self, memory_bank: torch.Tensor, access_times: torch.Tensor = None) -> float:
+        if access_times is not None:
+            used_slots = (access_times >= 0).sum().item()
+            return float(used_slots / self.num_slots)
+
         mem_norms = torch.norm(memory_bank, dim=-1)
-        meaningful = (mem_norms > 0.2).sum().item()
+        meaningful = (mem_norms > 0.5).sum().item()
         return float(meaningful / self.num_slots)
 
     def compute_threshold(self, capacity: float) -> float:
@@ -60,7 +64,7 @@ class CleanForgettingController(nn.Module):
             return 0.30 + (capacity - 0.60) * 1.0
 
     def forward(self, new_content, query, memory_bank, access_times, current_step):
-        capacity = self.check_capacity(memory_bank)
+        capacity = self.check_capacity(memory_bank, access_times)
         threshold = self.compute_threshold(capacity)
 
         combined = torch.cat([new_content, query], dim=-1)
@@ -83,7 +87,6 @@ class CleanForgettingController(nn.Module):
                 torch.stack([confidence, age.float()], dim=-1)
             ).squeeze(-1)
             victim = int(erase_scores.argmax().item())
-            should_store = torch.ones_like(should_store, dtype=torch.bool)
 
         written = False
         write_idx = None
