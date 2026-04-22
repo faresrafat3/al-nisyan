@@ -294,6 +294,6 @@ def run_forgetting_experiment(
 if __name__ == "__main__":
     run_forgetting_experiment(
         model_key="qwen3_0.6b",
-        memory_slots=256,
+        memory_slots=64,
         save_results=True,
     )
