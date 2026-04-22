@@ -301,7 +301,9 @@ class CultivatedMemoryModel(nn.Module):
             "step_counter": self.step_counter,
             "recent_access_mean": float(recent_access.mean()),
             "recent_access_std": float(recent_access.std()),
-            "stability_decay_rate": float(self.controller.decay_rate.item()),
+            "stability_decay_rate": float(getattr(self.controller, "decay_rate", torch.tensor(0.0)).item())
+            if hasattr(getattr(self.controller, "decay_rate", None), "item")
+            else float(getattr(self.controller, "decay_rate", 0.0)),
             "memory_change_ema": float(self.controller.memory_change_ema.item()),
         }
 

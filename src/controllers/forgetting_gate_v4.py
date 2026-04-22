@@ -43,7 +43,6 @@ class CleanForgettingController(nn.Module):
             nn.Sigmoid(),
         )
 
-        self.decay_rate = nn.Parameter(torch.tensor(0.008))
         self.register_buffer("memory_change_ema", torch.zeros(1))
 
     def check_capacity(self, memory_bank: torch.Tensor, access_times: torch.Tensor = None) -> float:
@@ -115,9 +114,6 @@ class CleanForgettingController(nn.Module):
 
             written = True
 
-        with torch.no_grad():
-            memory_bank *= (1.0 - self.decay_rate)
-
         return {
             "stored": written,
             "store_score": float(novelty.mean().item()),
@@ -127,7 +123,7 @@ class CleanForgettingController(nn.Module):
             "capacity": float(capacity),
             "victim": victim,
             "emergency_erase": victim,
-            "decay_rate": float(self.decay_rate.item()),
+            "decay_rate": 0.0,
             "conflict_detected": float(conflict.sum().item()),
             "updated_memory": memory_bank,
             "updated_access_times": access_times,

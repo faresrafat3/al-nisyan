@@ -11,7 +11,7 @@ from src.models.memory_augmented_model_v2 import CultivatedMemoryModel
 import json
 
 def stress_test():
-    """Run 200 interactions to push capacity to 30%+"""
+    """Run 100 interactions to push capacity to 30%+"""
     model = CultivatedMemoryModel(
         base_model_key="Qwen/Qwen3.5-4B",
         memory_slots=256,  # Smaller = faster to fill
@@ -19,7 +19,7 @@ def stress_test():
         controller_mode="clean",
     )
     
-    # 160 diverse interactions + 40 repetitive interactions
+    # 60 diverse interactions + 40 repetitive interactions
     base_prompts = [
         # Math
         "What is 15 + 27?", "Calculate 8 * 9.", "What is 100 / 4?",
@@ -49,9 +49,9 @@ def stress_test():
     ]
 
     diverse_prompts = []
-    while len(diverse_prompts) < 160:
+    while len(diverse_prompts) < 60:
         diverse_prompts.extend(base_prompts)
-    diverse_prompts = diverse_prompts[:160]
+    diverse_prompts = diverse_prompts[:60]
 
     repetitive_prompts = [
         "What is 2 + 2?", "What is 3 + 3?", "What is 4 + 4?",
